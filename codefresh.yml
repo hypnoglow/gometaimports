@@ -62,7 +62,7 @@ steps:
     tags:
       - commit.${{CF_SHORT_REVISION}}
       - master
-    registry: dockerhub
+    registry: dockerhub-gometaimports
     when:
       condition:
         all:
@@ -76,7 +76,7 @@ steps:
     candidate: ${{build_image}}
     tags:
       - ${{GOMETAIMPORTS_TAG}}
-    registry: dockerhub
+    registry: dockerhub-gometaimports
     when:
       condition:
         all:
