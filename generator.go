@@ -88,8 +88,12 @@ rules:
 
 	// If no rule matches path, then try to deduce automagically.
 	if pkg == "" {
-		pkg = strings.Join(pathParts[:g.config.MaxDepth], "/")
-		sub = strings.Join(pathParts[g.config.MaxDepth:], "/")
+		sep := g.config.MaxDepth
+		if len(pathParts) < g.config.MaxDepth {
+			sep = len(pathParts)
+		}
+		pkg = strings.Join(pathParts[:sep], "/")
+		sub = strings.Join(pathParts[sep:], "/")
 	}
 
 	data := map[string]interface{}{
