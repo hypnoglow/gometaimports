@@ -8,9 +8,8 @@ import (
 	"path/filepath"
 )
 
-var version = "unknown"
-
-const (
+var (
+	version      = "unknown"
 	templateDir  = "templates"
 	templateName = "index.html.tmpl"
 )

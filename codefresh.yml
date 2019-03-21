@@ -1,0 +1,84 @@
+# See: https://codefresh.io/docs/docs/codefresh-yaml/what-is-the-codefresh-yaml/
+
+version: '1.0'
+
+stages:
+  - deps
+  - test
+  - build
+  - push
+  - release
+
+steps:
+  install_modules:
+    stage: deps
+    title: Install modules
+    image: golang:1.12-alpine3.9
+    commands:
+      - echo "--> Install git ..."
+      - apk add --no-cache git
+      - echo "--> Download modules ..."
+      - go mod download
+      - echo "--> Put modules to vendor ..."
+      - go mod vendor
+      # Hack: prepare variable for tag.
+      - cf_export GOMETAIMPORTS_TAG="${CF_BRANCH_TAG_NORMALIZED#v*}"
+    when:
+      condition:
+        all:
+          noSkipCiInCommitMessage: 'includes(lower("${{CF_COMMIT_MESSAGE}}"), "[skip ci]") == false'
+
+  run_tests:
+    stage: test
+    title: Run tests
+    image: golang:1.12-alpine3.9
+    commands:
+      - echo "--> Run tests ..."
+      - GOFLAGS=-mod=vendor CGO_ENABLED=0 go test -v ./...
+    when:
+      condition:
+        all:
+          noSkipCiInCommitMessage: 'includes(lower("${{CF_COMMIT_MESSAGE}}"), "[skip ci]") == false'
+
+  build_image:
+    stage: build
+    title: Build docker image
+    type: build
+    dockerfile: Dockerfile
+    image_name: hypnoglow/gometaimports
+    tag: commit.${{CF_SHORT_REVISION}}
+    build_arguments:
+      - VERSION=${{GOMETAIMPORTS_TAG}}
+    when:
+      condition:
+        all:
+          noSkipCiInCommitMessage: 'includes(lower("${{CF_COMMIT_MESSAGE}}"), "[skip ci]") == false'
+
+  push_image_on_master:
+    stage: push
+    title: Push master
+    type: push
+    candidate: ${{build_image}}
+    tags:
+      - commit.${{CF_SHORT_REVISION}}
+      - master
+    registry: dockerhub
+    when:
+      condition:
+        all:
+          noSkipCiInCommitMessage: 'includes(lower("${{CF_COMMIT_MESSAGE}}"), "[skip ci]") == false'
+          masterBranch: '"${{CF_BRANCH}}" == "master"'
+
+  push_image_on_tag:
+    stage: push
+    title: Push tag
+    type: push
+    candidate: ${{build_image}}
+    tags:
+      - ${{GOMETAIMPORTS_TAG}}
+    registry: dockerhub
+    when:
+      condition:
+        all:
+          noSkipCiInCommitMessage: 'includes(lower("${{CF_COMMIT_MESSAGE}}"), "[skip ci]") == false'
+          isTag: 'match("${{GOMETAIMPORTS_TAG}}", "^[0-9]+\.[0-9]+\.[0-9]+", false) == true'
