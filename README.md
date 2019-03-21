@@ -13,8 +13,6 @@ cp config.yaml.dist config.yaml
 # edit config.yaml for your needs
 ```
 
-## Development
-
 Ensure modules are present in `vendor` directory:
 
 ```bash
