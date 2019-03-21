@@ -1,0 +1,46 @@
+# Golang package prefix that gometaimports should serve.
+packageHost: go.example.tld
+
+# Where to redirect the user if he came to the package URL from the browser.
+# Common options are godoc for the package, git repository web view,
+# or just company website.
+#
+# redirectURI can be either a static url or a template, which can access
+# variables "Package" and "SubPackage".
+redirectURI: https://godoc.example.tld/{{ .Package }}
+
+git:
+  host: ssh://git@mydomain.com
+  pathPrefix: group
+
+http:
+  host: https://mydomain.com
+  pathPrefix: group
+
+# minDepth is minimal available path parts in the package name.
+# For example, minDepth 2 allows repos under go.mydomain.com/package/name
+# but not go.mydomain.com/package-name.
+#
+# Defaults to 1.
+minDepth: 1
+
+# maxDepth is maximum available path parts in the package name.
+# For example, maxDepth 2 allows repos under go.mydomain.com/package/name,
+# but deeper levels are assumed as subpackages, threefore request for
+# package go.mydomain.com/package/name/sub/pkg will be resolved to
+# repository /package/name and assume subpackage sub/pkg.
+#
+# Defaults to 2.
+maxDepth: 2
+
+# Explicit rules that define mapping for packages to repos.
+# Each rule has 2 fields, name and repo:
+# - name is mandatory and is used for matching;
+# - repo can be omitted, then name is used as repo.
+rules:
+  # Matches "foo" package, and points to "bar" repository.
+  - name: foo
+    repo: bar
+  # Matches packages like "product/one", "product/two", etc.
+  # Points to the repository with the same name as package.
+  - name: product/*
