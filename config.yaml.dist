@@ -4,10 +4,11 @@ packageHost: go.example.tld
 # Where to redirect the user if he came to the package URL from the browser.
 # Common options are godoc for the package, git repository web view,
 # or just company website.
-#
-# redirectURI can be either a static url or a template, which can access
-# variables "Package" and "SubPackage".
-redirectURI: https://godoc.example.tld/{{ .Package }}
+redirect:
+  host: https://godoc.example.tld
+  # path can be either a static url or a template, which can access
+  # variables "Package" and "SubPackage".
+  path: /{{ .Package }}
 
 git:
   host: ssh://git@mydomain.com

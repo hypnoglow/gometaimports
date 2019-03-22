@@ -2,8 +2,10 @@
 <html>
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    {{- if .ImportPrefix }}
     <meta name="go-import" content="{{ .ImportPrefix }} git {{ .Git.URL }}">
     <meta name="go-source" content="{{ .ImportPrefix }} {{ .HTTP.URL }} {{ .HTTP.URL }}/tree/master{/dir} {{ .HTTP.URL }}/blob/master{/dir}/{file}#L{line}">
+    {{- end }}
     <meta http-equiv="refresh" content="0; url={{ .RedirectURI }}">
 </head>
 <body>

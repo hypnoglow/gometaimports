@@ -7,6 +7,7 @@ import (
 	ht "html/template"
 	"io"
 	"io/ioutil"
+	"path"
 	"path/filepath"
 	"strings"
 	tt "text/template"
@@ -49,15 +50,41 @@ type Generator struct {
 func (g *Generator) Generate(dst io.Writer, path string) error {
 	path = strings.Trim(path, "/")
 
+	data := make(map[string]interface{})
+	var pkg, sub string
+	var err error
+
+	if path != "" {
+		pkg, sub, err = g.deducePackage(path)
+		if err != nil {
+			return fmt.Errorf("make package data: %v", err)
+		}
+
+		data["ImportPrefix"] = filepath.Join(g.config.PackageHost, pkg)
+		g.makeGit(data, pkg)
+		g.makeHTTP(data, pkg)
+	}
+
+	redirect, err := g.makeRedirectURL(g.config.Redirect, pkg, sub)
+	if err != nil {
+		return fmt.Errorf("make redirect: %v", err)
+	}
+	data["RedirectURI"] = redirect
+
+	if err = g.template.Execute(dst, data); err != nil {
+		return fmt.Errorf("execute template: %v", err)
+	}
+
+	return nil
+}
+
+func (g *Generator) deducePackage(path string) (pkg, sub string, err error) {
 	pathParts := strings.Split(path, "/")
 	if len(pathParts) < g.config.MinDepth {
-		return errors.New("path is below minimum depth")
+		return "", "", errors.New("path is below minimum depth")
 	}
 
 	// First of all, check against explicit rules.
-	pkg := ""
-	sub := ""
-
 rules:
 	for _, rule := range g.config.Rules {
 		nameParts := strings.Split(rule.Name, "/")
@@ -96,23 +123,7 @@ rules:
 		sub = strings.Join(pathParts[sep:], "/")
 	}
 
-	data := map[string]interface{}{
-		"ImportPrefix": filepath.Join(g.config.PackageHost, pkg),
-		"Package":      pkg,
-		"SubPackage":   sub,
-	}
-
-	g.makeGit(data, pkg)
-	g.makeHTTP(data, pkg)
-	if err := g.makeRedirectURL(data, g.config.RedirectURI); err != nil {
-		return fmt.Errorf("execute template: %v", err)
-	}
-
-	if err := g.template.Execute(dst, data); err != nil {
-		return fmt.Errorf("execute template: %v", err)
-	}
-
-	return nil
+	return pkg, sub, nil
 }
 
 func (g *Generator) makeGit(data map[string]interface{}, pkg string) {
@@ -139,17 +150,23 @@ func (g *Generator) makeHTTP(data map[string]interface{}, pkg string) {
 	}
 }
 
-func (g *Generator) makeRedirectURL(data map[string]interface{}, uri string) error {
-	t, err := tt.New("redirect_url").Parse(uri)
-	if err != nil {
-		return err
+func (g *Generator) makeRedirectURL(redirect redirectOptions, pkg, sub string) (string, error) {
+	redirectURL := redirect.Host
+	if pkg != "" {
+		t, err := tt.New("redirect_path").Parse(redirect.Path)
+		if err != nil {
+			return "", err
+		}
+
+		buf := bytes.Buffer{}
+		err = t.Execute(&buf, map[string]interface{}{
+			"Package": pkg,
+			"Sub":     sub,
+		})
+		redirectURL = path.Join(redirectURL, buf.String())
 	}
 
-	buf := bytes.Buffer{}
-	err = t.Execute(&buf, data)
-
-	data["RedirectURI"] = buf.String()
-	return err
+	return redirectURL, nil
 }
 
 func loadConfig(b []byte) (*config, error) {
@@ -171,8 +188,8 @@ func loadConfig(b []byte) (*config, error) {
 }
 
 type config struct {
-	PackageHost string `json:"packageHost"`
-	RedirectURI string `json:"redirectURI"`
+	PackageHost string          `json:"packageHost"`
+	Redirect    redirectOptions `json:"redirect"`
 
 	Git  gitOptions  `json:"git"`
 	Http httpOptions `json:"http"`
@@ -181,6 +198,11 @@ type config struct {
 	MaxDepth int `json:"maxDepth"`
 
 	Rules []rule `json:"rules"`
+}
+
+type redirectOptions struct {
+	Host string `json:"host"`
+	Path string `json:"path"`
 }
 
 type gitOptions struct {
