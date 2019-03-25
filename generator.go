@@ -7,7 +7,6 @@ import (
 	ht "html/template"
 	"io"
 	"io/ioutil"
-	"path"
 	"path/filepath"
 	"strings"
 	tt "text/template"
@@ -163,7 +162,7 @@ func (g *Generator) makeRedirectURL(redirect redirectOptions, pkg, sub string) (
 			"Package": pkg,
 			"Sub":     sub,
 		})
-		redirectURL = path.Join(redirectURL, buf.String())
+		redirectURL = redirectURL + "/" + strings.TrimPrefix("/", buf.String())
 	}
 
 	return redirectURL, nil
