@@ -90,7 +90,7 @@ rules:
 
 	match:
 		for i := range nameParts {
-			if len(pathParts) < i {
+			if len(pathParts) <= i {
 				continue rules
 			}
 
@@ -98,14 +98,26 @@ rules:
 				continue match
 			}
 
-			if nameParts[i] == "*" {
+			if nameParts[i] == "*" && pathParts[i] != "" {
 				continue match
 			}
 
 			continue rules
 		}
 
-		// The most specific (longest) match wins.
+		if rule.Repo != "" {
+			ruleRepoParts := strings.Split(rule.Repo, "/")
+			for i, part := range ruleRepoParts {
+				if part == "*" {
+					ruleRepoParts[i] = pathParts[i]
+				}
+			}
+			pkg = strings.Join(ruleRepoParts, "/")
+			sub = strings.Join(pathParts[len(nameParts):], "/")
+			break rules
+		}
+
+		// If no rule repo specified, the most specific (longest) match wins.
 		if p := strings.Join(pathParts[:len(nameParts)], "/"); len(pkg) < len(p) {
 			pkg = p
 			sub = strings.Join(pathParts[len(nameParts):], "/")
