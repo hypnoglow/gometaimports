@@ -174,9 +174,8 @@ func (g *Generator) makeRedirectURL(redirect redirectOptions, pkg, sub string) (
 			"Package": pkg,
 			"Sub":     sub,
 		})
-		redirectURL = redirectURL + "/" + strings.TrimPrefix("/", buf.String())
+		redirectURL = redirectURL + "/" + strings.TrimPrefix(buf.String(), "/")
 	}
-
 	return redirectURL, nil
 }
 
