@@ -59,7 +59,7 @@ func (g *Generator) Generate(dst io.Writer, path string) error {
 			return fmt.Errorf("make package data: %v", err)
 		}
 
-		data["ImportPrefix"] = filepath.Join(g.config.PackageHost, pkg)
+		data["ImportPrefix"] = filepath.Join(g.config.PackageHost, path)
 		g.makeGit(data, pkg)
 		g.makeHTTP(data, pkg)
 	}
