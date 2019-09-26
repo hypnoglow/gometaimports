@@ -88,6 +88,8 @@ rules:
 	for _, rule := range g.config.Rules {
 		nameParts := strings.Split(rule.Name, "/")
 
+		var replacements []string
+
 	match:
 		for i := range nameParts {
 			if len(pathParts) <= i {
@@ -99,6 +101,7 @@ rules:
 			}
 
 			if nameParts[i] == "*" && pathParts[i] != "" {
+				replacements = append(replacements, pathParts[i])
 				continue match
 			}
 
@@ -109,7 +112,16 @@ rules:
 			ruleRepoParts := strings.Split(rule.Repo, "/")
 			for i, part := range ruleRepoParts {
 				if part == "*" {
-					ruleRepoParts[i] = pathParts[i]
+					if len(replacements) == 0 {
+						return "", "", fmt.Errorf("no replacements - ensure the number of wildcards in rule name matches the number of wildcards in rule repo")
+					}
+					replacement := replacements[0]
+					if len(replacements) == 1 {
+						replacements = nil
+					} else {
+						replacements = replacements[i+1:]
+					}
+					ruleRepoParts[i] = replacement
 				}
 			}
 			pkg = strings.Join(ruleRepoParts, "/")
