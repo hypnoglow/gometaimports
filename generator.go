@@ -46,8 +46,8 @@ type Generator struct {
 }
 
 // Generate generates template based on path and writes it to dst.
-func (g *Generator) Generate(dst io.Writer, path string) error {
-	path = strings.Trim(path, "/")
+func (g *Generator) Generate(dst io.Writer, realhost, realpath string) error {
+	path := strings.Trim(realpath, "/")
 
 	data := make(map[string]interface{})
 	var pkg, sub string
@@ -59,7 +59,12 @@ func (g *Generator) Generate(dst io.Writer, path string) error {
 			return fmt.Errorf("make package data: %v", err)
 		}
 
-		data["ImportPrefix"] = filepath.Join(g.config.PackageHost, path)
+		host := g.config.PackageHost
+		if host == "" {
+			host = realhost
+		}
+
+		data["ImportPrefix"] = filepath.Join(host, path)
 		g.makeGit(data, pkg)
 		g.makeHTTP(data, pkg)
 	}

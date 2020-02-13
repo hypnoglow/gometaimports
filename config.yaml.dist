@@ -1,4 +1,5 @@
 # Golang package prefix that gometaimports should serve.
+# If empty, request host will be used.
 packageHost: go.example.tld
 
 # Where to redirect the user if he came to the package URL from the browser.
